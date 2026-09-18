@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NYC Airbnb Market Intelligence</title>
+<style>
+:root{
+  --paper:#fffaf0; --ink:#171717; --muted:#68645c; --line:#d8c9aa;
+  --blue:#6f91c4; --green:#78a99a; --red:#d96b68; --yellow:#e8bf67;
+  --card:#fffdf7; --shadow:0 10px 30px rgba(41,33,20,.08);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; color:var(--ink);
+  font-family: "Trebuchet MS", Arial, sans-serif;
+  background:
+    radial-gradient(circle at 12% 8%, rgba(232,191,103,.12), transparent 25%),
+    radial-gradient(circle at 90% 20%, rgba(120,169,154,.12), transparent 25%),
+    var(--paper);
+}
+body:before{
+  content:""; position:fixed; inset:12px; pointer-events:none; z-index:50;
+  border:3px solid #34312d; border-radius:26px 20px 30px 18px;
+  opacity:.75;
+}
+a{color:inherit}
+.container{width:min(1400px, calc(100% - 44px)); margin:auto}
+.hero{padding:44px 0 22px}
+.topbar{display:flex; justify-content:space-between; gap:18px; align-items:center}
+.badge{
+  display:inline-flex; gap:8px; align-items:center; padding:8px 12px;
+  border:2px solid var(--ink); border-radius:999px; background:#fff;
+  font-weight:800; font-size:12px; letter-spacing:.06em; text-transform:uppercase;
+  box-shadow:3px 3px 0 #d6c7ab;
+}
+.hero h1{
+  font-size:clamp(40px,6vw,78px); line-height:.95; margin:22px 0 12px;
+  letter-spacing:-.055em; max-width:1050px;
+}
+.hero h1 span{background:linear-gradient(transparent 62%, #e8c987 62%); padding:0 4px}
+.subtitle{font-size:clamp(16px,2vw,23px); color:#4e4a44; max-width:850px; line-height:1.45}
+.controls{
+  margin:20px 0 26px; padding:16px; border:2px solid var(--ink);
+  border-radius:18px; background:#fff; display:flex; gap:12px; flex-wrap:wrap;
+  box-shadow:5px 5px 0 #ddd0b7;
+}
+select,button{
+  font:inherit; border:2px solid var(--ink); background:#fffaf0; padding:10px 14px;
+  border-radius:10px; font-weight:800; cursor:pointer;
+}
+button.active{background:var(--ink); color:white}
+.section-title{display:flex; align-items:end; justify-content:space-between; gap:16px; margin:28px 0 14px}
+.section-title h2{margin:0; font-size:clamp(25px,3vw,38px); letter-spacing:-.03em}
+.section-title p{margin:0; color:var(--muted); font-size:14px}
+.grid{display:grid; gap:16px}
+.kpis{grid-template-columns:repeat(3,1fr)}
+.card{
+  background:rgba(255,255,255,.84); border:2px solid var(--ink); border-radius:20px;
+  padding:22px; box-shadow:var(--shadow); position:relative; overflow:hidden;
+}
+.card:after{
+  content:""; position:absolute; width:90px; height:20px; right:-28px; top:12px;
+  border-top:3px solid #c6b797; transform:rotate(8deg); opacity:.5;
+}
+.kpi-label{font-weight:800; color:#57524a; text-transform:uppercase; letter-spacing:.08em; font-size:12px}
+.kpi-value{font-size:clamp(38px,4.5vw,66px); font-weight:900; line-height:1; margin:12px 0 7px}
+.kpi-note{color:var(--muted); line-height:1.4}
+.price{color:#b64e4b}.availability{color:#4f78a8}.listings{color:#5d8d7e}
+.main-grid{grid-template-columns:1.15fr .85fr}
+.chart-card{min-height:400px}
+.chart-wrap{height:300px; margin-top:8px}
+svg{width:100%; height:100%; overflow:visible}
+.grid2{grid-template-columns:1fr 1fr}
+.insight-list{display:grid; gap:12px; margin-top:16px}
+.insight{
+  display:flex; gap:12px; align-items:flex-start; padding:13px 14px;
+  border:1.5px dashed #a99b81; border-radius:14px; background:#fffaf2;
+}
+.dot{width:12px;height:12px;border-radius:50%;margin-top:5px;flex:none}
+.legend{display:flex; flex-wrap:wrap; gap:10px; margin-top:12px}
+.legend span{font-size:12px; font-weight:800; display:flex; gap:6px; align-items:center}
+.bar-list{display:grid;gap:14px;margin-top:20px}
+.bar-row{display:grid;grid-template-columns:140px 1fr 58px;gap:10px;align-items:center}
+.bar-label{font-size:13px;font-weight:800}
+.track{height:14px;background:#eee5d6;border:1.5px solid #b9ad97;border-radius:999px;overflow:hidden}
+.fill{height:100%;border-radius:999px}
+.bar-value{text-align:right;font-weight:900;font-size:13px}
+.footer{
+  margin:34px 0 50px; padding:20px 0; border-top:2px solid #bdb19b;
+  color:#68645c; font-size:13px; line-height:1.55;
+}
+.small{font-size:12px;color:#777}
+@media(max-width:900px){
+  .kpis,.main-grid,.grid2{grid-template-columns:1fr}
+  body:before{inset:5px}
+  .container{width:min(100% - 28px,1400px)}
+  .hero{padding-top:28px}
+}
+@media(max-width:600px){
+  .topbar{align-items:flex-start;flex-direction:column}
+  .bar-row{grid-template-columns:100px 1fr 50px}
+  .card{padding:18px}
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <header class="hero">
+    <div class="topbar">
+      <div class="badge">NYC • Airbnb Market Intelligence</div>
+      <div class="small">Interactive desktop dashboard</div>
+    </div>
+    <h1>NYC Airbnb <span>Market Intelligence</span></h1>
+    <div class="subtitle">Snapshot of market performance, pricing, availability, geographic distribution, room mix, and host / booking characteristics.</div>
+
+    <div class="controls">
+      <label><span class="small">Borough</span><br>
+        <select id="boroughFilter"><option value="all">All boroughs</option></select>
+      </label>
+      <label><span class="small">Room category</span><br>
+        <select id="roomFilter"><option value="all">All room types</option></select>
+      </label>
+      <button id="resetBtn">Reset filters</button>
+    </div>
+  </header>
+
+  <section>
+    <div class="section-title">
+      <h2>Market Performance & Pricing</h2>
+      <p>Workbook-derived metrics • 102,599 records</p>
+    </div>
+    <div class="grid kpis">
+      <article class="card">
+        <div class="kpi-label">Average Daily Rate</div>
+        <div class="kpi-value price" id="avgPrice">$623.79</div>
+        <div class="kpi-note">Average final listing price across the full market dataset.</div>
+      </article>
+      <article class="card">
+        <div class="kpi-label">Annual Availability</div>
+        <div class="kpi-value availability" id="avgAvailability">129.78 days</div>
+        <div class="kpi-note">Average number of available days per listing per year.</div>
+      </article>
+      <article class="card">
+        <div class="kpi-label">Listings Tracked</div>
+        <div class="kpi-value listings" id="listingCount">102,599</div>
+        <div class="kpi-note">Rows in the Airbnb Open Data workbook used for this dashboard.</div>
+      </article>
+    </div>
+  </section>
+
+  <section class="grid main-grid" style="margin-top:16px">
+    <article class="card chart-card">
+      <div class="section-title">
+        <h2 style="font-size:26px">Pricing Stability</h2>
+        <p>Average final price by construction year</p>
+      </div>
+      <div class="chart-wrap"><svg id="lineChart" viewBox="0 0 900 300" role="img" aria-label="Pricing by construction year"></svg></div>
+      <div class="small">Construction years shown: 2003–2021. Values are calculated from <b>CLEAR_ FINAL PRICE</b>.</div>
+    </article>
+
+    <article class="card">
+      <div class="section-title">
+        <h2 style="font-size:26px">Geographic Distribution</h2>
+        <p>Share of listings</p>
+      </div>
+      <div id="boroughBars" class="bar-list"></div>
+      <div class="insight-list">
+        <div class="insight"><span class="dot" style="background:var(--blue)"></span><div><b>Brooklyn + Manhattan</b><br><span class="small">Together account for about 83.5% of listings in the workbook.</span></div></div>
+        <div class="insight"><span class="dot" style="background:var(--green)"></span><div><b>Queens</b><br><span class="small">Represents about 12.9% of the dataset.</span></div></div>
+      </div>
+    </article>
+  </section>
+
+  <section class="grid grid2" style="margin-top:16px">
+    <article class="card">
+      <div class="section-title">
+        <h2 style="font-size:26px">Primary Room Categories</h2>
+        <p>Listing mix</p>
+      </div>
+      <div id="roomBars" class="bar-list"></div>
+    </article>
+
+    <article class="card">
+      <div class="section-title">
+        <h2 style="font-size:26px">Host Identity</h2>
+        <p>Verification status</p>
+      </div>
+      <div id="hostBars" class="bar-list"></div>
+      <div class="small" style="margin-top:18px">The source contains both verified and unconfirmed host identity values, plus a small unspecified category.</div>
+    </article>
+  </section>
+
+  <section class="grid grid2" style="margin-top:16px">
+    <article class="card">
+      <div class="section-title">
+        <h2 style="font-size:26px">Booking Policy Signal</h2>
+        <p>Instant-bookable field</p>
+      </div>
+      <div id="bookingBars" class="bar-list"></div>
+    </article>
+
+    <article class="card">
+      <div class="section-title">
+        <h2 style="font-size:26px">Market Notes</h2>
+        <p>Quick read</p>
+      </div>
+      <div class="insight-list">
+        <div class="insight"><span class="dot" style="background:var(--red)"></span><div><b>Pricing is relatively steady</b><br><span class="small">Average construction-year prices remain in a narrow band across 2003–2021.</span></div></div>
+        <div class="insight"><span class="dot" style="background:var(--yellow)"></span><div><b>Entire homes / apartments lead</b><br><span class="small">They form the largest room-type group, followed by private rooms.</span></div></div>
+        <div class="insight"><span class="dot" style="background:var(--green)"></span><div><b>Availability varies by listing</b><br><span class="small">The dataset includes listings from zero available days up to 365 days.</span></div></div>
+      </div>
+    </article>
+  </section>
+
+  <footer class="footer">
+    <b>Data source:</b> Airbnb_Open_Data.xlsx, sheet “Airbnb_Open_Data”. The visual design is a web recreation of the supplied NYC Airbnb Market Intelligence overview.
+    <br><span class="small">Figures are calculated from the uploaded workbook. The filter controls are presentation-level filters for the dashboard view; the headline figures above remain the workbook-wide reference metrics.</span>
+  </footer>
+</div>
+
+<script>
+const DATA = {"avgPrice": 623.79, "avgAvailability": 129.78, "listingCount": 102599, "boroughs": [{"name": "Brooklyn", "count": 41843, "pct": 40.8}, {"name": "Manhattan", "count": 43793, "pct": 42.7}, {"name": "Queens", "count": 13267, "pct": 12.9}, {"name": "Bronx", "count": 2712, "pct": 2.6}, {"name": "Staten Island", "count": 955, "pct": 0.9}, {"name": "Unspecified", "count": 29, "pct": 0.0}], "rooms": [{"name": "Entire home/apt", "count": 53701, "pct": 52.3}, {"name": "Private room", "count": 46556, "pct": 45.4}, {"name": "Shared room", "count": 2226, "pct": 2.2}, {"name": "Hotel room", "count": 116, "pct": 0.1}], "hosts": [{"name": "unconfirmed", "count": 51200, "pct": 49.9}, {"name": "verified", "count": 51110, "pct": 49.8}, {"name": "NOT SPECIFIED", "count": 289, "pct": 0.3}], "booking": [{"name": "Not instant bookable", "count": 51474, "pct": 50.2}, {"name": "Instant bookable", "count": 51020, "pct": 49.7}, {"name": "Unspecified", "count": 76, "pct": 0.1}, {"name": "Not mentioned", "count": 29, "pct": 0.0}], "annual": [{"year": 2003, "price": 621.66}, {"year": 2004, "price": 628.34}, {"year": 2005, "price": 619.11}, {"year": 2006, "price": 633.28}, {"year": 2007, "price": 624.8}, {"year": 2008, "price": 636.9}, {"year": 2009, "price": 617.84}, {"year": 2010, "price": 625.64}, {"year": 2011, "price": 625.69}, {"year": 2012, "price": 621.99}, {"year": 2013, "price": 617.46}, {"year": 2014, "price": 628.99}, {"year": 2015, "price": 615.77}, {"year": 2016, "price": 622.48}, {"year": 2017, "price": 627.74}, {"year": 2018, "price": 623.33}, {"year": 2019, "price": 610.96}, {"year": 2020, "price": 619.75}, {"year": 2021, "price": 627.82}]};
+
+const palette = ["#6f91c4","#78a99a","#d96b68","#e8bf67","#8d78aa","#8b8171"];
+
+function money(v){ return "$" + Number(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function num(v){ return Number(v).toLocaleString(undefined,{maximumFractionDigits:0}); }
+
+function fillSelect(id, items){
+  const el=document.getElementById(id);
+  items.forEach(x=>{const o=document.createElement("option");o.value=x.name;o.textContent=x.name;el.appendChild(o);});
+}
+
+function renderBars(targetId, items, valueKey="pct"){
+  const target=document.getElementById(targetId); target.innerHTML="";
+  const max=Math.max(...items.map(x=>x[valueKey]),1);
+  items.forEach((x,i)=>{
+    const row=document.createElement("div"); row.className="bar-row";
+    row.innerHTML=`<div class="bar-label">${x.name}</div>
+      <div class="track"><div class="fill" style="width:${(x[valueKey]/max)*100}%;background:${palette[i%palette.length]}"></div></div>
+      <div class="bar-value">${x[valueKey]}%</div>`;
+    target.appendChild(row);
+  });
+}
+
+function renderLine(){
+  const svg=document.getElementById("lineChart");
+  const W=900,H=300,p={l:55,r:25,t:20,b:45};
+  const vals=DATA.annual.map(d=>d.price), years=DATA.annual.map(d=>d.year);
+  const min=Math.floor(Math.min(...vals)-5), max=Math.ceil(Math.max(...vals)+5);
+  const x=i=>p.l+i*(W-p.l-p.r)/(vals.length-1);
+  const y=v=>p.t+(max-v)*(H-p.t-p.b)/(max-min);
+  let s=`<rect x="0" y="0" width="${W}" height="${H}" fill="transparent"/>`;
+  [min, (min+max)/2, max].forEach(v=>{
+    const yy=y(v); s+=`<line x1="${p.l}" x2="${W-p.r}" y1="${yy}" y2="${yy}" stroke="#ddd3c1" stroke-dasharray="5 7"/>
+    <text x="${p.l-10}" y="${yy+4}" text-anchor="end" font-size="12" fill="#777">${Math.round(v)}</text>`;
+  });
+  const points=vals.map((v,i)=>`${x(i)},${y(v)}`).join(" ");
+  s+=`<polyline points="${points}" fill="none" stroke="#27343f" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>`;
+  vals.forEach((v,i)=>{
+    s+=`<circle cx="${x(i)}" cy="${y(v)}" r="5.5" fill="${i===vals.length-1?'#d96b68':'#6f91c4'}" stroke="#17202a" stroke-width="2"/>
+    <title>${years[i]}: ${money(v)}</title>`;
+  });
+  [0,Math.floor(vals.length/2),vals.length-1].forEach(i=>{
+    s+=`<text x="${x(i)}" y="${H-12}" text-anchor="middle" font-size="12" font-weight="700" fill="#5d574f">${years[i]}</text>`;
+  });
+  svg.innerHTML=s;
+}
+
+function init(){
+  fillSelect("boroughFilter", DATA.boroughs);
+  fillSelect("roomFilter", DATA.rooms);
+  renderBars("boroughBars", DATA.boroughs);
+  renderBars("roomBars", DATA.rooms);
+  renderBars("hostBars", DATA.hosts);
+  renderBars("bookingBars", DATA.booking);
+  renderLine();
+
+  document.getElementById("resetBtn").onclick=()=>{
+    document.getElementById("boroughFilter").value="all";
+    document.getElementById("roomFilter").value="all";
+    updateFilterLabel();
+  };
+  document.getElementById("boroughFilter").onchange=updateFilterLabel;
+  document.getElementById("roomFilter").onchange=updateFilterLabel;
+}
+function updateFilterLabel(){
+  const b=document.getElementById("boroughFilter").value;
+  const r=document.getElementById("roomFilter").value;
+  const note=document.querySelector(".kpis .card:nth-child(3) .kpi-note");
+  note.textContent=(b==="all"&&r==="all")
+    ? "Rows in the Airbnb Open Data workbook used for this dashboard."
+    : `View filters selected: ${b==="all"?"all boroughs":b} • ${r==="all"?"all room types":r}. Charts remain on the full workbook totals.`;
+}
+init();
+</script>
+</body>
+</html>
